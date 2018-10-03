@@ -14,18 +14,18 @@ def benchmark(str_size: int, data_size: int):
 
 if __name__ == '__main__':
     cases = [
-        {'str': 10, 'data': 100000},
         {'str': 10, 'data': 1000000},
-        {'str': 20, 'data': 100000},
+        {'str': 10, 'data': 10000000},
         {'str': 20, 'data': 1000000},
-        {'str': 30, 'data': 100000},
+        {'str': 20, 'data': 10000000},
         {'str': 30, 'data': 1000000},
-        {'str': 40, 'data': 100000},
+        {'str': 30, 'data': 10000000},
         {'str': 40, 'data': 1000000},
-        {'str': 50, 'data': 100000},
+        {'str': 40, 'data': 10000000},
         {'str': 50, 'data': 1000000},
-        {'str': 60, 'data': 100000},
+        {'str': 50, 'data': 10000000},
         {'str': 60, 'data': 1000000},
+        {'str': 60, 'data': 10000000},
     ]
 
     for case in cases:
