@@ -3,7 +3,7 @@ from search import search
 
 
 def benchmark(str_size: int, data_size: int):
-    needle = 'A' * str_size;
+    needle = 'A' * str_size
     haystack = list(map(lambda x: needle, range(1, data_size)))
 
     begin = time.time()
