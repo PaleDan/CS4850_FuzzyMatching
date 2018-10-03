@@ -17,7 +17,7 @@ def search() :
 	searchfile = input('>')
 	
 	file = open(filename)
-	searchlist = file.read().splitlines()
+	searchlist = file.readlines()
 	file.close()
 	
 	file = open(searchfile)
@@ -63,7 +63,7 @@ def multiSearch(t) :
 	searchlist = []
 	
 	file = open(filename)
-	searchlist = file.read().splitlines()
+	searchlist = file.readlines()
 	file.close()
 		
 	file = open(searchfile)
