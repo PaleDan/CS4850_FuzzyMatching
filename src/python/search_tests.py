@@ -1,5 +1,5 @@
 import unittest
-import fuzzy
+from search import search
 
 
 class SearchTests(unittest.TestCase):
@@ -9,7 +9,7 @@ class SearchTests(unittest.TestCase):
         haystack = file.read().splitlines()
         file.close()
         needle = 'Sandra Dodson 376-2877 Aliquet, Rd. Berlin BE'
-        results = fuzzy.search(needle, haystack)
+        results = search(needle, haystack)
         self.assertEqual(needle, results[0]['data'])
 
 

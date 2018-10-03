@@ -1,17 +1,17 @@
-import Levenshtein
+import levenshtein_py
 import time
+from multiprocessing import Process, Value, Array
 from typing import List
 
-
-def search(source: str, lookup: List[str]) -> List[dict]:
+def threaded_search(source: str, lookup: List[str]) -> List[dict]:
     search_results = [{'ratio': 0.0}]
     for index, record in enumerate(lookup):
-        ratio = Levenshtein.ratio(source, record)
-        search_result = {'ratio': ratio, 'data': record, 'id': index}
-        search_results.append(search_result)
-        if len(search_results) > 10:
+        search_result = levenshtein_py.distance(source, record)
+        search_result['data'] = record
+        search_result['id'] = index
+        search_results.append(result)
+        if len(results) > 10:
             search_results.remove(min(search_results, key=lambda x: x['ratio']))
-    search_results.sort(key=lambda x: x['ratio'], reverse=True)
     return search_results
 
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
     print("beginning search...")
     begin_time = time.process_time()
 
-    results = search(search_string, search_list)
+    results = threaded_search(search_string, search_list)
 
     end_time = time.process_time()
     print(f"finished search. runtime: {end_time - begin_time} ({end_time} - {begin_time})")
