@@ -106,10 +106,13 @@ float uiLevenshteinDistance( const std::string &s1, const std::string &s2)
 
 int main()
 {
-    string input;
+    string input, fileName;
+
 
     // stores the given file in the variable myFile
-    std::ifstream myFile("somefile.txt", std::ifstream::in);
+    cout << "Please enter a file name to read:" ;
+    cin >> fileName;
+    std::ifstream myFile(fileName, std::ifstream::in);
 
     // input
     std::getline(std::cin, input);
