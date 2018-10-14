@@ -1,0 +1,2 @@
+C:\Users\Daniel\Source\Repos\CS4850_Phase1\CS4850_Phase1\CS4850_Phase1\obj\Debug\CS4850_Phase1.csprojResolveAssemblyReference.cache
+C:\Users\Daniel\Source\Repos\CS4850_Phase1\CS4850_Phase1\CS4850_Phase1\obj\Debug\CS4850_Phase1.csproj.CoreCompileInputs.cache

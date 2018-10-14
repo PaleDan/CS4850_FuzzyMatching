@@ -1,12 +1,25 @@
 import Levenshtein
+from levenshtein_py import distance
 import time
 from typing import List
 
 
-def search(source: str, lookup: List[str]) -> List[dict]:
+def search_c(source: str, lookup: List[str]) -> List[dict]:
     search_results = [{'ratio': 0.0}]
     for index, record in enumerate(lookup):
         ratio = Levenshtein.ratio(source, record)
+        search_result = {'ratio': ratio, 'data': record, 'id': index}
+        search_results.append(search_result)
+        if len(search_results) > 10:
+            search_results.remove(min(search_results, key=lambda x: x['ratio']))
+    search_results.sort(key=lambda x: x['ratio'], reverse=True)
+    return search_results
+
+
+def search_p(source: str, lookup: List[str]) -> List[dict]:
+    search_results = [{'ratio': 0.0}]
+    for index, record in enumerate(lookup):
+        ratio = distance(source, record)['ratio']
         search_result = {'ratio': ratio, 'data': record, 'id': index}
         search_results.append(search_result)
         if len(search_results) > 10:
