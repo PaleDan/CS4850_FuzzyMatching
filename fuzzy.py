@@ -30,7 +30,7 @@ def search() :
 	begintime = time.process_time()
 	
 	for i in range(len(searchlist)) :
-		distance = Levenshtein.distance(searchstring, searchlist[i])
+		distance = 1 - Levenshtein.ratio(searchstring, searchlist[i])
 		tree.insert(distance, i)
 		
 	endtime = time.process_time()

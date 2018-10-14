@@ -1,7 +1,7 @@
 import binarySearchTree
 import Levenshtein
 import random
-import multiprocessing
+from multiprocessing import Process, Manager
 import sys
 import time
 #using https://pypi.org/project/python-Levenshtein/0.12.0/
@@ -16,13 +16,15 @@ def search() :
 	print('\nenter the search filename')
 	searchfile = input('>')
 	
+	print('loading...', end='')
 	file = open(filename)
-	searchlist = file.readlines()
+	searchlist = file.read().splitlines()
 	file.close()
-	
+		
 	file = open(searchfile)
 	searchstring = file.read()
 	file.close()
+	print('done. (' + str(len(searchlist)) + ')')
 
 	tree = binarySearchTree.Tree()
 	
@@ -30,8 +32,8 @@ def search() :
 	begintime = time.process_time()
 	
 	for i in range(len(searchlist)) :
-		distance = Levenshtein.distance(searchstring, searchlist[i])
-		tree.insert(distance, i)
+		ratio = 1 - Levenshtein.ratio(searchstring, searchlist[i])
+		tree.insert(ratio, i)
 		
 	endtime = time.process_time()
 	print("finished search. runtime: " + str(endtime - begintime) + " (" + str(endtime) + " - " + str(begintime) + ")")
@@ -40,7 +42,7 @@ def search() :
 	topten = tree.get(10)
 	print('\ntop ten: (' + str(len(topten)) + ')')
 	for i in range(len(topten)) :
-		print(str(i+1) + ': ' + searchlist[topten[i].val] + ' (distance: ' + str(topten[i].key) + ')')
+		print(str(i+1) + ': ' + searchlist[topten[i].val] + ' (ratio: ' + str(1 - topten[i].key) + ')')
 #
 
 def multiSearch(t) :
@@ -52,8 +54,8 @@ def multiSearch(t) :
 		threadcount = t
 	else :
 		threadcount = 1
-	nextLock = multiprocessing.Lock()
-	#treeLock = multiprocessing.Lock()
+	nextLock = Lock()
+	#treeLock = Lock()
 	
 	print('enter the database filename')
 	filename = input('>')
@@ -61,14 +63,16 @@ def multiSearch(t) :
 	searchfile = input('>')
 	
 	searchlist = []
-	
+
+	print('loading...', end='')
 	file = open(filename)
-	searchlist = file.readlines()
+	searchlist = file.read().splitlines()
 	file.close()
 		
 	file = open(searchfile)
 	searchstring = file.read()
 	file.close()
+	print('done. (' + str(len(searchlist)) + ')')
 
 	tree = binarySearchTree.Tree()
 	
@@ -77,7 +81,7 @@ def multiSearch(t) :
 	distances = []
 	values = []
 	for i in range(threadcount) :
-		distances.append(multiprocessing.Value('i', 0))
+		distances.append(Value('i', 0))
 		values.append(searchlist.pop())
 	
 	print("beginning search...")
@@ -85,7 +89,7 @@ def multiSearch(t) :
 
 	
 	for i in range(threadcount) :
-		p = multiprocessing.Process(target=levenshteinThread, args=(searchstring, values[i], distances[i]))
+		p = Process(target=levenshteinThread, args=(searchstring, values[i], distances[i]))
 		threads.append(p)
 		p.start()
 	
@@ -94,8 +98,8 @@ def multiSearch(t) :
 		if not threads[currentthread].is_alive() :
 			tree.insert(distances[currentthread].value, values[currentthread])
 			values[currentthread] = searchlist.pop()
-			#distances[currentthread] = multiprocessing.Value('i', 0)
-			threads[currentthread] = multiprocessing.Process(target=levenshteinThread, args=(searchstring, values[currentthread], distances[currentthread]))
+			#distances[currentthread] = Value('i', 0)
+			threads[currentthread] = Process(target=levenshteinThread, args=(searchstring, values[currentthread], distances[currentthread]))
 			threads[currentthread].start()
 		currentthread = currentthread + 1
 		if currentthread >= len(threads) :
@@ -118,6 +122,68 @@ def multiSearch(t) :
 def levenshteinThread(searchstring, record, distance) :
 	distance.value = Levenshtein.distance(searchstring, record)
 	return 
+#
+
+def dbSearch(db1, db2, min) :	
+	threads = []
+	manager = Manager()
+	lists = []
+		
+	for i in range(len(db1)) :
+		lists.append( manager.list() )
+		threads.append(Process(target=dbSearchProcess, args=(db1[i], db2, lists[i], min)))
+		threads[i].start()
+	
+	for i in range(len(threads)) :
+		threads[i].join()
+	
+	return lists
+#
+
+def dbSearchProcess(record, db, list, min) :
+	templist = []
+	
+	for i in range(len(db)) :
+		ratio = Levenshtein.ratio(record, db[i])
+		if ratio >= min :
+			templist.append( [ratio, db[i]] )
+
+	templist.sort(key=lambda x: x[0], reverse=True)	
+	for i in range(len(templist)) :
+		list.append(templist[i])
+#
+
+def startSearch() :
+	print('enter the first database filename')
+	db1 = input('>')
+	
+	print('loading...', end='')
+	file = open(db1)
+	db1 = file.read().splitlines()
+	file.close()
+	print('done. (' + str(len(db1)) + ')')
+	
+	print('enter the second database filename')
+	db2 = input('>')
+	
+	print('loading...', end='')
+	file = open(db2)
+	db2 = file.read().splitlines()
+	file.close()
+	print('done. (' + str(len(db2)) + ')')
+
+	begintime = time.time()
+
+	lists = dbSearch(db1, db2, 0.6)
+
+	endtime = time.time()
+	print("done.")
+	for i in range(len(lists)) :
+		if len(lists[i]) > 0 :
+			print('[' + str(i) + '](' + str(lists[i][0][0]) + '):' + lists[i][0][1])
+		else :
+			print('[' + str(i) + '](-1):>NO MATCH')
+	print("finished search. runtime: " + str(endtime - begintime) + " (" + str(endtime) + " - " + str(begintime) + ")")
 #
 
 def getNext() :
@@ -181,7 +247,7 @@ if __name__ == '__main__':
 		elif not method == 0 :
 			method()
 	else :
-		multiSearch(1)
+		startSearch()
 #
 
 
