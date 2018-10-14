@@ -241,7 +241,7 @@ if __name__ == '__main__':
 			elif hasattr(fuzzy, sys.argv[i]) :
 				method = getattr(fuzzy, sys.argv[i])
 		if help :
-			print("-t [number]  - specifies number of threads to generate\nsearch       - specifies to use the single-threaded search function")
+			print("-t [number]  - specifies number of threads to use in multisearch\nsearch       - specifies to use the single-threaded search function")
 		elif threads > 0 :
 			multiSearch(threads)
 		elif not method == 0 :
