@@ -15,108 +15,155 @@ namespace CS4850_Phase1
         //add more as needed
     }
 
+    struct Match
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public int RowIndex { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public String Source { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public String Lookup { get; set; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public double SimilarityRatio { get; set; }
+
+        public Match(String source, String lookup, double similarityRatio, int rowIndex = -1)
+        {
+            RowIndex = rowIndex;
+            Source = source;
+            Lookup = lookup;
+            SimilarityRatio = similarityRatio;
+        }
+    }
+
     class FuzzyMatcher
     {
-
-
         #region Fields
-        private static readonly Dictionary<StringAlgorithms, Delegate> algorithms;
-            
-
-        #region Delegates
-        private delegate int DelGetLevenshteinDistance(String s, String t);
-        private delegate int DelSmithWaterman(String s, String t);
-        #endregion Delegates 
         #endregion Fields
 
         #region Methods
-
-        //static constructor
-        static FuzzyMatcher()
-        {
-            algorithms = new Dictionary<StringAlgorithms, Delegate>
-            {
-                { StringAlgorithms.LevenshteinDistance, new DelGetLevenshteinDistance(GetLevenshteinDistance) }
-            };
-        }
-
+        //TODO: rename 'GetAllDistances' to something more appropriate
         /// <summary>
-        /// Calculates the 
+        /// Calculates the Levenshtein distances between the query string
+        /// and every string in some database.
         /// </summary>
-        /// <typeparam name="T"></typeparam>
         /// <param name="query">the query string</param>
-        /// <param name="database">the </param>
-        /// <param name=""></param>
-        /// <returns></returns>
-        public static IList<KeyValuePair<String, T>> GetAllDistanecs<T>(String query, IList<String> database, StringAlgorithms algorithm = StringAlgorithms.LevenshteinDistance)
+        /// <param name="database">database of strings to be matched against
+        /// </param>
+        /// <returns>an IList of matches; each match contains a string 
+        /// similarity ratio calculated from an associated Levenshtein distance
+        /// </returns>
+        public static IList<Match> GetAllDistances(String query, IList<String> database)
         {
-            return FindClosestMatches<T>(query, database, database.Count, algorithm);
+            return FindClosestMatches(query, database, database.Count);
         }
-
-
 
         /// <summary>
         /// Finds the specified number of the top closest matches between the
-        /// query string and the database of strings to be matched against. The
-        /// matching algorithm to be used is an optional parameter of
-        /// the StringAlgorithms enum type; if no StringAlgorithms 
-        /// argument is passed in, it will default to Levenshtein distance.
+        /// query string and the database of strings to be matched against.
         /// </summary>
-        /// <typeparam name="T">the data type of the metric being used by the
-        /// specified string similarity algorithm. If no algorithm is
-        /// specified, this method will default to Levenshtein distance which
-        /// uses an integer edit distance metric.
-        /// </typeparam>
         /// <param name="query">the query string</param>
-        /// <param name="database">database of strings to be matched against</param>
-        /// <param name="numMatches">number of closest matches to be returned</param>
-        /// <param name="algorithm"></param>
+        /// <param name="database">database of strings to be matched against
+        /// </param>
+        /// <param name="numMatches">number of closest matches to be returned
+        /// </param>
         /// <returns></returns>
-        public static IList<KeyValuePair<String, T>> FindClosestMatches<T>(String query, IList<String> database, int numMatches, StringAlgorithms algorithm = StringAlgorithms.LevenshteinDistance) 
+        public static IList<Match> FindClosestMatches(String query, IList<String> database, int numMatches)
         {
-            IList<KeyValuePair<String, T>> result = new List<KeyValuePair<String, T>>(numMatches);
-            
-            return result;
-        }
+            List<Match> matches = new List<Match>(numMatches);
 
+            for (int i = 0; i < database.Count; ++i)
+            {
+                matches.Add(new Match(query, database[i], GetLevenshteinRatio(query, database[i]), i));
+            }
+
+            matches.Sort((m1, m2) => -1 * m1.SimilarityRatio.CompareTo(m2.SimilarityRatio));
+            return matches.Take(numMatches).ToList();
+        }
 
         /// <summary>
         /// Matches a query string against a database of strings stored in the
-        /// specified file, using the specified algorithm, and returns the the top
+        /// specified file and returns the the top
         /// 'numMatches' number of closest-matching strings found.
         /// </summary>
-        /// <typeparam name="T">the data type of the metric being used by the
-        /// specified string similarity algorithm. If no algorithm is
-        /// specified, this method will default to Levenshtein distance which
-        /// uses an integer edit distance metric.
-        /// </typeparam>
         /// <param name="query">the query string; the string to be matched</param>
         /// <param name="fileName">the name of the file containing the data
         /// set to be matched against
         /// </param>
         /// <param name="numMatches">the number of closest matches to be found
         /// </param>
-        /// <param name="algorithm">the string algorithm to be used to do the
-        /// matching
-        /// </param>
-        /// <returns>a List (as an IList) of the closest matches to the query
-        /// string and the corresponding string similarity metric value, stored
-        /// as (key, value) pairs with the matched string as the key and the
-        /// metric as the value.
+        /// <returns>an IList of the closest matches to the query string
         /// </returns>
-        public static IList<KeyValuePair<String, T>> FindClosestMatches<T>(String query, String fileName, int numMatches, StringAlgorithms algorithm = StringAlgorithms.LevenshteinDistance)
+        public static IList<Match> FindClosestMatches(String query, String fileName, int numMatches)
         {
-            
-            IList<KeyValuePair<String, T>> result = new List<KeyValuePair< String, T>> (numMatches);
-            
+            List<Match> result = new List<Match>();
+            //TODO: use a BST or other sorted data structure to reduce overhead
+            //      of maintaining the current top 'numMatches' # of matches
+            //double currentLowestSimilarity = 0.0f;
+
             try
             {
                 string line;
+                int lineNum = 0;
                 using (StreamReader sr = new StreamReader(fileName))
                 {
                     while ((line = sr.ReadLine()) != null)
                     {
-                        result.Add(new KeyValuePair<String, T> (line, (T)algorithms[algorithm].DynamicInvoke(new Object[] { query, line } )));
+                        result.Add(new Match(query, line, GetLevenshteinRatio(query, line), lineNum));
+                        ++lineNum;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            result.Sort((m1, m2) => -1 * m1.SimilarityRatio.CompareTo(m2.SimilarityRatio));
+            return result.Take(numMatches).ToList();
+        }
+
+        /// <summary>
+        /// Finds a list of matches whose similarity ratios are above the 
+        /// specified threshold
+        /// </summary>
+        /// <param name="query">the query string</param>
+        /// <param name="fileName">the name of the file containing the set of
+        /// strings to be matched against
+        /// </param>
+        /// <param name="threshold">the similarity threshold</param>
+        /// <returns>a list of matches whose similarity ratios are above the 
+        /// specified threshold
+        /// </returns>
+        public static IList<Match> FindMatchesAboveThreshold(String query, String fileName, double threshold)
+        {
+            if (threshold < 0)
+            {
+                throw new ArgumentOutOfRangeException("threshold must be greater than or equal to 0");
+            }
+            List<Match> result = new List<Match>();
+
+            try
+            {
+                string line;
+                int lineNumber = 0;
+                using (StreamReader sr = new StreamReader(fileName))
+                {
+                    while ((line = sr.ReadLine()) != null)
+                    {
+                        Match currentMatch = new Match(query, line, GetLevenshteinRatio(query, line), lineNumber);
+                        if (currentMatch.SimilarityRatio >= threshold)
+                        {
+                            result.Add(currentMatch);
+                        }
+                        ++lineNumber;
                     }
                 }
             }
@@ -173,8 +220,23 @@ namespace CS4850_Phase1
                             d[i - 1, j - 1] + 1 //a substitution
                             );
 
-            //double similarityPercentage = ((1.0 - (d[n, m] / (double)Math.Max(s.Length, t.Length))));
             return d[n, m];
+        }
+
+        //TODO?: can add a 'Distance' or 'SimilarityMetric' property to the
+        //      Match struct to simplify the means by which we convert or
+        //      normalize the Levenshtein distance into a ratio
+        /// <summary>
+        /// Calculates the similarity ratio associated with the Levenshtein
+        /// distance between the two specified strings
+        /// </summary>
+        /// <param name="s">source string</param>
+        /// <param name="t">target string</param>
+        /// <returns>similarity ratio associated with the Levenshtein
+        /// distance between the two specified strings</returns>
+        public static double GetLevenshteinRatio(String s, String t)
+        {
+            return ((1.0d - (GetLevenshteinDistance(s, t) / (double)Math.Max(s.Length, t.Length))));
         }
         #endregion Methods
     }
