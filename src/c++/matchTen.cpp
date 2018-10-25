@@ -11,7 +11,8 @@
 
 using namespace std;
 
-// struct type that stores two data type variables, in this case the LevenshteinDistance and the string your input was compared with in the file
+// this is supposed to be a struct type that stores the levenshtein distance and the string value associated with the line from the file it was compared to
+// I attempted to change string to a template to accomodate the weird type that is producted by the future package later in the code.
 template<class ASYNC>
 struct Record
 {
