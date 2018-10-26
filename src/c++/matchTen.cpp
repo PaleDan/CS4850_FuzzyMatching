@@ -11,13 +11,11 @@
 
 using namespace std;
 
-// this is supposed to be a struct type that stores the levenshtein distance and the string value associated with the line from the file it was compared to
-// I attempted to change string to a template to accomodate the weird type that is producted by the future package later in the code.
-template<class ASYNC>
+// struct type that stores two data type variables, in this case the LevenshteinDistance and the string your input was compared with in the file
 struct Record
 {
 	float distance;
-	ASYNC value;
+	string value;
 };
 
 // prototype for levenshtein
@@ -155,8 +153,7 @@ vector<string> readFile3(ifstream& file)
 }
 
 // compares the input given by the user to the files lines stored in the vector
-template<class ASYNC>
-vector<Record> compare(string input, ASYNC &file)
+vector<Record> compare(string input, vector<string> file)
 {
 	vector<Record> results;
 	Record result;
@@ -233,34 +230,28 @@ int main()
 	cout << "Please enter a record name for comparison:" << endl;
 	std::getline(std::cin, input);
 
-	/* fills the fileVector with the strings from the file with every fourth line of the file starting at 0, the function is run concurrently with it's likewise 
+	/* fills the fileVector with the strings from the file with every fourth line of the file starting at 0, the function is run concurrently with it's likewise
 	*I had to use auto to simulate the vector type here because using async created a special type that can't be stored using by simply using a string vector
 	*/
 	auto t1 = async(launch::async, readFile0, ref(myFile));
 
-	
+
 	auto t2 = async(launch::async, readFile1, ref(myFile));
 
-	
+
 	auto t3 = async(launch::async, readFile2, ref(myFile));
 
-	
-	auto t4 = async(launch::async, readFile3, ref(myFile))
 
-	// produces levenshtein values by comparing the input with the first 1/4 of the file (here is where I'm having trouble because the Record vector can't store the new type.
-	// using auto here wouldn't work either because you need to create a struct to idenify the closest levenshtein distance and the string match associated with it.
-	vector<Record> sortedVector0 = compare(input, t1);
+	auto t4 = async(launch::async, readFile3, ref(myFile));
 
-	// produces levenshtein values by comparing the input with the second 1/4 of the file
-	vector<Record> sortedVector1 = compare(input, t2);
+	vector<Record> sortedVector0 = compare(input, t1.get());
 
-	// produces levenshtein values by comparing the input with the third 1/4 of the file
-	vector<Record> sortedVector2 = compare(input, t3);
+	vector<Record> sortedVector1 = compare(input, t2.get());
 
-	// produces levenshtein values by comparing the input with the final 1/4 of the file
-	vector<Record> sortedVector3 = compare(input, t4);
+	vector<Record> sortedVector2 = compare(input, t3.get());
 
-	// here I'm simply merging the values of the four vectors created from the four parts of the file into one 
+	vector<Record> sortedVector3 = compare(input, t4.get());
+
 	result0.value = sortedVector0[0].value;
 	result0.distance = sortedVector0[0].distance;
 	finalVector.push_back(result0);
@@ -284,3 +275,5 @@ int main()
 
 	return 0;
 }
+
+
