@@ -137,11 +137,15 @@ def dbSearch(db1, db2, min, threadcount) :
 	for i in range(len(threads)) :
 		threads[i].join()
 	
-	return lists
+	results = []
+	for i in range(len(lists)) :
+		for j in range(len(lists[i])) :
+			results = results + lists[i][j]
+
+	return results
 
 def dbSearchProcess(db1, db2, list, min, initial) :
 	templist = []
-	print(len(db1))
 	for j in range(len(db1)) :
 		jlist = []
 		for i in range(len(db2)) :
@@ -175,14 +179,9 @@ def startSearch(threadcount, min) :
 
 	begintime = time.time()
 
-	lists = dbSearch(db1, db2, min, threadcount)
+	results = dbSearch(db1, db2, min, threadcount)
 
 	endtime = time.time()
-
-	results = []
-	for i in range(len(lists)) :
-		for j in range(len(lists[i])) :
-			results = results + lists[i][j]
 
 	print("done.")
 	for i in range(len(results)) :
