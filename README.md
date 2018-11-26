@@ -1,2 +1,2 @@
 # CS4850_FuzzyMatching
-Fuzzy string matching in (massively) parallel implementations with benchmarking.
+Fuzzy string matching in serial and parallel implementations with benchmarking in C++, C# and Python.
