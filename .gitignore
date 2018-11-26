@@ -1,2 +1,8 @@
 # python generated files
 src/python/__pycache__
+
+# Visual Studio files
+src\csharp\.vs
+
+# C# generate files
+src\csharp\CS4850_Phase1\obj
