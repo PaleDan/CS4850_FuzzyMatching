@@ -43,7 +43,6 @@ def search() :
 	print('\ntop ten: (' + str(len(topten)) + ')')
 	for i in range(len(topten)) :
 		print(str(i+1) + ': ' + searchlist[topten[i].val] + ' (ratio: ' + str(1 - topten[i].key) + ')')
-#
 
 def multiSearch(t) :
 	print("multiSearch(" + str(t) + ")")
@@ -117,47 +116,53 @@ def multiSearch(t) :
 	print('\ntop ten: (' + str(len(topten)) + ')')
 	for i in range(len(topten)) :
 		print(str(i+1) + ': ' + topten[i].val + ' (distance: ' + str(topten[i].key) + ')')
-#
 
 def levenshteinThread(searchstring, record, distance) :
 	distance.value = Levenshtein.distance(searchstring, record)
 	return 
-#
 
-def dbSearch(db1, db2, min) :	
+def dbSearch(db1, db2, min, threadcount) :	
 	threads = []
 	manager = Manager()
 	lists = []
-		
-	for i in range(len(db1)) :
-		lists.append( manager.list() )
-		threads.append(Process(target=dbSearchProcess, args=(db1[i], db2, lists[i], min)))
+	step = int(len(db1) / threadcount)
+	initial = 0
+	for i in range(threadcount) :
+		end = step * (i+1)
+		lists.append(manager.list())
+		threads.append(Process(target=dbSearchProcess, args=(db1[initial:end], db2, lists[i], min, initial)))
 		threads[i].start()
+		initial = end
 	
 	for i in range(len(threads)) :
 		threads[i].join()
 	
-	return lists
-#
+	results = []
+	for i in range(len(lists)) :
+		for j in range(len(lists[i])) :
+			results = results + lists[i][j]
 
-def dbSearchProcess(record, db, list, min) :
+	return results
+
+def dbSearchProcess(db1, db2, list, min, initial) :
 	templist = []
-	
-	for i in range(len(db)) :
-		ratio = Levenshtein.ratio(record, db[i])
-		if ratio >= min :
-			templist.append( [ratio, db[i]] )
+	for j in range(len(db1)) :
+		jlist = []
+		for i in range(len(db2)) :
+			ratio = Levenshtein.ratio(db1[j], db2[i])
+			if ratio >= min :
+				jlist.append( [ratio, j + initial, i] )
 
-	templist.sort(key=lambda x: x[0], reverse=True)	
-	for i in range(len(templist)) :
-		list.append(templist[i])
-#
+		jlist.sort(key=lambda x: x[0], reverse=True)
+		for i in range(len(jlist)) :
+			templist.append(jlist[i])
+	list.append(templist)
 
-def startSearch() :
+def startSearch(threadcount, min) :
 	print('enter the first database filename')
 	db1 = input('>')
 	
-	print('loading...', end='')
+	print('loading...', end='', flush=True)
 	file = open(db1)
 	db1 = file.read().splitlines()
 	file.close()
@@ -166,7 +171,7 @@ def startSearch() :
 	print('enter the second database filename')
 	db2 = input('>')
 	
-	print('loading...', end='')
+	print('loading...', end='', flush=True)
 	file = open(db2)
 	db2 = file.read().splitlines()
 	file.close()
@@ -174,17 +179,17 @@ def startSearch() :
 
 	begintime = time.time()
 
-	lists = dbSearch(db1, db2, 0.6)
+	results = dbSearch(db1, db2, min, threadcount)
 
 	endtime = time.time()
+
 	print("done.")
-	for i in range(len(lists)) :
-		if len(lists[i]) > 0 :
-			print('[' + str(i) + '](' + str(lists[i][0][0]) + '):' + lists[i][0][1])
+	for i in range(len(results)) :
+		if len(results[i]) > 0 :
+			print('[' + str(i) + '](' + str(results[i][0]) + '):', '[' + str(db1[results[i][1]]) + ']', '[' + str(db2[results[i][2]]) + ']' )
 		else :
 			print('[' + str(i) + '](-1):>NO MATCH')
 	print("finished search. runtime: " + str(endtime - begintime) + " (" + str(endtime) + " - " + str(begintime) + ")")
-#
 
 def getNext() :
 	global nextLock
@@ -194,13 +199,11 @@ def getNext() :
 			return searchlist.pop()
 		else :
 			return False
-#
 
 def addToTree(distance, value) :
 	global treeLock
 	with treeLock :
 		tree.insert(distance, value)
-#
 
 def treeTest() :
 	tree = binarySearchTree.Tree()
@@ -213,21 +216,19 @@ def treeTest() :
 	for i in range(len(topten)) :
 		print(str(i) + ': ' + str(topten[i].key))
 
-#
-
 def timeTest() :
 	for i in range(1000) :
 		print(time.process_time())
-#
 
 
 
 if __name__ == '__main__':
 	fuzzy = sys.modules[__name__]
 	commands = ['help']
-	dashcommands = ['t']
-	threads = 0
+	dashcommands = ['t', 'm']
+	threads = 4
 	method = 0
+	minimum = 0.6
 	help = False
 	if len(sys.argv) > 1 :
 		for i in range(1, len(sys.argv)) :
@@ -238,28 +239,16 @@ if __name__ == '__main__':
 				if sys.argv[i][1:] == dashcommands[0] :
 					threads = int(sys.argv[i+1])
 					i = i + 1
+				if sys.argv[i][1:] == dashcommands[1] :
+					minimum = int(sys.argv[i+1])
+					i = i + 1
 			elif hasattr(fuzzy, sys.argv[i]) :
 				method = getattr(fuzzy, sys.argv[i])
 		if help :
 			print("-t [number]  - specifies number of threads to use in multisearch\nsearch       - specifies to use the single-threaded search function")
-		elif threads > 0 :
-			multiSearch(threads)
 		elif not method == 0 :
-			method()
+			method(threads)
+		else :
+			startSearch(threads, minimum)
 	else :
-		startSearch()
-#
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+		startSearch(threads, minimum)
